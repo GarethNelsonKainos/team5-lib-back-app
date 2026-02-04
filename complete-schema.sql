@@ -186,6 +186,155 @@ JOIN book_copies bc ON bh.copy_id = bc.copy_id
 JOIN books b ON bc.book_id = b.id
 WHERE bh.return_date IS NULL;
 
+-- Popular Books Analytics view (weekly borrowing statistics)
+CREATE VIEW popular_books_weekly AS
+SELECT 
+    b.id as book_id,
+    b.title,
+    b.genre,
+    ba.author_name,
+    COUNT(bh.borrow_id) as borrow_count,
+    COUNT(DISTINCT bh.member_id) as unique_borrowers,
+    DATE_TRUNC('week', bh.borrow_date) as week_start
+FROM books b
+LEFT JOIN book_authors ba ON b.id = ba.book_id AND ba.author_order = 1
+LEFT JOIN book_copies bc ON b.id = bc.book_id
+LEFT JOIN borrow_history bh ON bc.copy_id = bh.copy_id
+WHERE bh.borrow_date >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY b.id, b.title, b.genre, ba.author_name, DATE_TRUNC('week', bh.borrow_date)
+ORDER BY borrow_count DESC;
+
+-- Popular Books Analytics view (monthly borrowing statistics)
+CREATE VIEW popular_books_monthly AS
+SELECT 
+    b.id as book_id,
+    b.title,
+    b.genre,
+    ba.author_name,
+    COUNT(bh.borrow_id) as borrow_count,
+    COUNT(DISTINCT bh.member_id) as unique_borrowers,
+    EXTRACT(YEAR FROM bh.borrow_date) as year,
+    EXTRACT(MONTH FROM bh.borrow_date) as month
+FROM books b
+LEFT JOIN book_authors ba ON b.id = ba.book_id AND ba.author_order = 1
+LEFT JOIN book_copies bc ON b.id = bc.book_id
+LEFT JOIN borrow_history bh ON bc.copy_id = bh.copy_id
+WHERE bh.borrow_date >= DATE_TRUNC('month', CURRENT_DATE)
+GROUP BY b.id, b.title, b.genre, ba.author_name, EXTRACT(YEAR FROM bh.borrow_date), EXTRACT(MONTH FROM bh.borrow_date)
+ORDER BY borrow_count DESC;
+
+-- Popular Books Analytics view (annual borrowing statistics)
+CREATE VIEW popular_books_annual AS
+SELECT 
+    b.id as book_id,
+    b.title,
+    b.genre,
+    ba.author_name,
+    COUNT(bh.borrow_id) as borrow_count,
+    COUNT(DISTINCT bh.member_id) as unique_borrowers,
+    EXTRACT(YEAR FROM bh.borrow_date) as year
+FROM books b
+LEFT JOIN book_authors ba ON b.id = ba.book_id AND ba.author_order = 1
+LEFT JOIN book_copies bc ON b.id = bc.book_id
+LEFT JOIN borrow_history bh ON bc.copy_id = bh.copy_id
+WHERE bh.borrow_date >= DATE_TRUNC('year', CURRENT_DATE)
+GROUP BY b.id, b.title, b.genre, ba.author_name, EXTRACT(YEAR FROM bh.borrow_date)
+ORDER BY borrow_count DESC;
+
+-- Genre Analytics view (most popular genres by time period)
+CREATE VIEW popular_genres AS
+SELECT 
+    b.genre,
+    COUNT(bh.borrow_id) as total_borrows,
+    COUNT(DISTINCT bh.member_id) as unique_borrowers,
+    COUNT(DISTINCT b.id) as unique_books,
+    DATE_TRUNC('month', bh.borrow_date) as period
+FROM books b
+JOIN book_copies bc ON b.id = bc.book_id
+JOIN borrow_history bh ON bc.copy_id = bh.copy_id
+GROUP BY b.genre, DATE_TRUNC('month', bh.borrow_date)
+ORDER BY total_borrows DESC;
+
+-- Author Analytics view (most borrowed authors)
+CREATE VIEW popular_authors AS
+SELECT 
+    ba.author_name,
+    COUNT(bh.borrow_id) as total_borrows,
+    COUNT(DISTINCT bh.member_id) as unique_borrowers,
+    COUNT(DISTINCT b.id) as books_count,
+    DATE_TRUNC('month', bh.borrow_date) as period
+FROM book_authors ba
+JOIN books b ON ba.book_id = b.id
+JOIN book_copies bc ON b.id = bc.book_id
+JOIN borrow_history bh ON bc.copy_id = bh.copy_id
+GROUP BY ba.author_name, DATE_TRUNC('month', bh.borrow_date)
+ORDER BY total_borrows DESC;
+
+-- Library Usage Statistics view
+CREATE VIEW library_usage_stats AS
+SELECT 
+    COUNT(DISTINCT m.member_id) as total_members,
+    COUNT(DISTINCT CASE WHEN m.status = 'Active' THEN m.member_id END) as active_members,
+    COUNT(DISTINCT CASE WHEN m.registration_date >= CURRENT_DATE - INTERVAL '30 days' THEN m.member_id END) as new_members_this_month,
+    COUNT(DISTINCT cb.member_id) as members_with_active_borrows,
+    COUNT(DISTINCT b.id) as total_books,
+    COUNT(DISTINCT bc.copy_id) as total_copies,
+    COUNT(DISTINCT CASE WHEN bc.status = 'Available' THEN bc.copy_id END) as available_copies,
+    COUNT(DISTINCT CASE WHEN bc.status = 'Borrowed' THEN bc.copy_id END) as borrowed_copies,
+    COUNT(DISTINCT cb.borrow_id) as current_active_borrows,
+    COUNT(DISTINCT CASE WHEN cb.is_overdue THEN cb.borrow_id END) as overdue_borrows
+FROM members m
+CROSS JOIN books b
+CROSS JOIN book_copies bc
+LEFT JOIN current_borrows cb ON TRUE;
+
+-- Operational Reports view (overdue summary)
+CREATE VIEW overdue_summary AS
+SELECT 
+    cb.member_id,
+    m.full_name,
+    m.email,
+    m.phone,
+    cb.copy_id,
+    cb.book_title,
+    cb.borrow_date,
+    cb.due_date,
+    cb.days_overdue,
+    cb.renewal_count
+FROM current_borrows cb
+JOIN members m ON cb.member_id = m.member_id
+WHERE cb.is_overdue = TRUE
+ORDER BY cb.days_overdue DESC;
+
+-- Collection Utilization view (books never borrowed or high-demand)
+CREATE VIEW collection_utilization AS
+SELECT 
+    b.id as book_id,
+    b.title,
+    b.genre,
+    ba.author_name,
+    b.total_copies,
+    b.available_copies,
+    COUNT(bh.borrow_id) as total_borrows,
+    COUNT(DISTINCT bh.member_id) as unique_borrowers,
+    MAX(bh.borrow_date) as last_borrowed_date,
+    CASE 
+        WHEN COUNT(bh.borrow_id) = 0 THEN 'Never Borrowed'
+        WHEN COUNT(bh.borrow_id) > 50 THEN 'High Demand'
+        WHEN COUNT(bh.borrow_id) > 20 THEN 'Medium Demand'
+        ELSE 'Low Demand'
+    END as demand_category,
+    CASE 
+        WHEN b.available_copies = 0 AND COUNT(bh.borrow_id) > 20 THEN TRUE
+        ELSE FALSE
+    END as needs_more_copies
+FROM books b
+LEFT JOIN book_authors ba ON b.id = ba.book_id AND ba.author_order = 1
+LEFT JOIN book_copies bc ON b.id = bc.book_id
+LEFT JOIN borrow_history bh ON bc.copy_id = bh.copy_id
+GROUP BY b.id, b.title, b.genre, ba.author_name, b.total_copies, b.available_copies
+ORDER BY total_borrows DESC;
+
 -- =============================================================================
 -- INDEXES FOR PERFORMANCE
 -- =============================================================================
