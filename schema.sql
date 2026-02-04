@@ -87,30 +87,13 @@ CREATE TABLE borrow_history (
 -- INDEXES FOR PERFORMANCE
 -- =============================================================================
 
--- Books indexes
-CREATE INDEX idx_books_title ON books(title);
-CREATE INDEX idx_books_genre ON books(genre);
-CREATE INDEX idx_books_isbn ON books(isbn);
-CREATE INDEX idx_books_publication_year ON books(publication_year);
-
--- Book Authors indexes
+-- Foreign key indexes (improve JOIN performance)
 CREATE INDEX idx_book_authors_book_id ON book_authors(book_id);
-CREATE INDEX idx_book_authors_name ON book_authors(author_name);
-
--- Book Copies indexes
 CREATE INDEX idx_book_copies_book_id ON book_copies(book_id);
-CREATE INDEX idx_book_copies_status ON book_copies(status);
-CREATE INDEX idx_book_copies_current_borrower ON book_copies(current_borrower_id);
-
--- Borrow History indexes
-CREATE INDEX idx_borrow_history_copy_id ON borrow_history(copy_id);
 CREATE INDEX idx_borrow_history_member_id ON borrow_history(member_id);
-CREATE INDEX idx_borrow_history_borrow_date ON borrow_history(borrow_date);
-CREATE INDEX idx_borrow_history_return_date ON borrow_history(return_date);
 
--- Members indexes
-CREATE INDEX idx_members_email ON members(email);
-CREATE INDEX idx_members_status ON members(status);
+-- Note: Primary keys and UNIQUE constraints are automatically indexed
+-- Additional indexes can be added later based on actual query performance needs
 
 -- =============================================================================
 -- TABLE RELATIONSHIPS DOCUMENTATION
