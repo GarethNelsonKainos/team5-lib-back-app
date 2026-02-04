@@ -1,6 +1,6 @@
 ---
 name: Database Agent
-description: 'This will review existing database schemas in folders and review project requrements to create additional schemas as needed.'
+description: 'This will review existing database schemas in folders and review project requirements to create additional schemas as needed.'
 tools: ['read', 'edit', 'search', 'agent', 'todo', 'execute']
 model: Claude Sonnet 4.5 (copilot)
 handoffs:
@@ -44,7 +44,3 @@ The Database Agent will not:
 - Handle database performance optimization or query tuning.
 - Manage database backups or recovery processes.
 - Engage in tasks outside of database schema management and development.
-## Summary
-The Database Agent is a specialized tool for managing database schemas in alignment with project requirements.
-
-Define what this custom agent accomplishes for the user, when to use it, and the edges it won't cross. Specify its ideal inputs/outputs, the tools it may call, and how it reports progress or asks for help.
