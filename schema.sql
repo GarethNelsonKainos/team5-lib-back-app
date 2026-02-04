@@ -23,12 +23,12 @@ CREATE TABLE members (
     city VARCHAR(100),
     state VARCHAR(100),
     zip_code VARCHAR(20),
-    status membership_status NOT NULL DEFAULT 'Active',
-    registration_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    current_borrow_count INTEGER DEFAULT 0 CHECK (current_borrow_count >= 0 AND current_borrow_count <= 3),
-    has_overdue_books BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    status membership_status,
+    registration_date DATE,
+    current_borrow_count INTEGER ,
+    has_overdue_books BOOLEAN,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
 -- Books Table
@@ -39,10 +39,10 @@ CREATE TABLE books (
     genre VARCHAR(100) NOT NULL,
     publication_year INTEGER,
     description TEXT,
-    total_copies INTEGER DEFAULT 0 CHECK (total_copies >= 0),
-    available_copies INTEGER DEFAULT 0 CHECK (available_copies >= 0 AND available_copies <= total_copies),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    total_copies INTEGER DEFAULT 0 CHECK,
+    available_copies INTEGER DEFAULT 0 CHECK,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP 
 );
 
 -- Book Authors Table (Many-to-Many: One book can have multiple authors)
@@ -50,8 +50,7 @@ CREATE TABLE book_authors (
     author_id SERIAL PRIMARY KEY,
     book_id INTEGER NOT NULL,
     author_name VARCHAR(200) NOT NULL,
-    author_order INTEGER DEFAULT 1,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP,
     CONSTRAINT fk_book FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
@@ -59,9 +58,9 @@ CREATE TABLE book_authors (
 CREATE TABLE book_copies (
     copy_id SERIAL PRIMARY KEY,
     book_id INTEGER NOT NULL,
-    status copy_status NOT NULL DEFAULT 'Available',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    status copy_status,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
     CONSTRAINT fk_book_copy FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
@@ -70,10 +69,10 @@ CREATE TABLE loans (
     loan_id SERIAL PRIMARY KEY,
     copy_id INTEGER NOT NULL,
     member_id INTEGER NOT NULL,
-    borrow_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    borrow_date TIMESTAMP,
     due_date DATE NOT NULL,
-    is_overdue BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    is_overdue BOOLEAN,
+    created_at TIMESTAMP,
     CONSTRAINT fk_loan_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
     CONSTRAINT fk_loan_member FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
 );
@@ -83,11 +82,11 @@ CREATE TABLE borrow_history (
     history_id SERIAL PRIMARY KEY,
     copy_id INTEGER NOT NULL,
     member_id INTEGER NOT NULL,
-    borrow_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    borrow_date TIMESTAMP,
     due_date DATE NOT NULL,
-    return_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    was_overdue BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    return_date TIMESTAMP,
+    was_overdue BOOLEAN,
+    created_at TIMESTAMP,
     CONSTRAINT fk_history_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
     CONSTRAINT fk_history_member FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
 );
