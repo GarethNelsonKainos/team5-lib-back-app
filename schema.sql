@@ -14,7 +14,7 @@ CREATE TYPE membership_status AS ENUM ('Active', 'Inactive', 'Suspended');
 
 -- Members Table
 CREATE TABLE members (
-    member_id VARCHAR(20) PRIMARY KEY,
+    member_id SERIAL PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -37,13 +37,12 @@ CREATE TABLE books (
     title VARCHAR(500) NOT NULL,
     isbn VARCHAR(17) UNIQUE NOT NULL,
     genre VARCHAR(100) NOT NULL,
-    publication_year INTEGER CHECK (publication_year >= 1000 AND publication_year <= 2100),
+    publication_year INTEGER,
     description TEXT,
     total_copies INTEGER DEFAULT 0 CHECK (total_copies >= 0),
-    available_copies INTEGER DEFAULT 0 CHECK (available_copies >= 0),
+    available_copies INTEGER DEFAULT 0 CHECK (available_copies >= 0 AND available_copies <= total_copies),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_available_copies CHECK (available_copies <= total_copies)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Book Authors Table (Many-to-Many: One book can have multiple authors)
@@ -58,29 +57,39 @@ CREATE TABLE book_authors (
 
 -- Book Copies Table (One-to-Many: One book can have multiple physical copies)
 CREATE TABLE book_copies (
-    copy_id VARCHAR(50) PRIMARY KEY,
+    copy_id SERIAL PRIMARY KEY,
     book_id INTEGER NOT NULL,
     status copy_status NOT NULL DEFAULT 'Available',
-    current_borrower_id VARCHAR(20),
-    borrow_date DATE,
-    due_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_book_copy FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE,
-    CONSTRAINT fk_current_borrower FOREIGN KEY (current_borrower_id) REFERENCES members(member_id) ON DELETE SET NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_book_copy FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
--- Borrow History Table (Tracks all borrowing transactions)
-CREATE TABLE borrow_history (
-    borrow_id SERIAL PRIMARY KEY,
-    copy_id VARCHAR(50) NOT NULL,
-    member_id VARCHAR(20) NOT NULL,
+-- Loans Table (Active borrows only - current loans in progress)
+CREATE TABLE loans (
+    loan_id SERIAL PRIMARY KEY,
+    copy_id INTEGER NOT NULL,
+    member_id INTEGER NOT NULL,
     borrow_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     due_date DATE NOT NULL,
-    return_date TIMESTAMP WITH TIME ZONE,
     is_overdue BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_borrowed_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
-    CONSTRAINT fk_borrower FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
+    CONSTRAINT fk_loan_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
+    CONSTRAINT fk_loan_member FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
+);
+
+-- Borrow History Table (Completed transactions only - returned books)
+CREATE TABLE borrow_history (
+    history_id SERIAL PRIMARY KEY,
+    copy_id INTEGER NOT NULL,
+    member_id INTEGER NOT NULL,
+    borrow_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    due_date DATE NOT NULL,
+    return_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    was_overdue BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_history_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
+    CONSTRAINT fk_history_member FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
 );
 
 -- =============================================================================
@@ -90,6 +99,8 @@ CREATE TABLE borrow_history (
 -- Foreign key indexes (improve JOIN performance)
 CREATE INDEX idx_book_authors_book_id ON book_authors(book_id);
 CREATE INDEX idx_book_copies_book_id ON book_copies(book_id);
+CREATE INDEX idx_loans_member_id ON loans(member_id);
+CREATE INDEX idx_loans_copy_id ON loans(copy_id);
 CREATE INDEX idx_borrow_history_member_id ON borrow_history(member_id);
 
 -- Note: Primary keys and UNIQUE constraints are automatically indexed
@@ -112,17 +123,22 @@ RELATIONSHIP SUMMARY:
    - Foreign Key: book_copies.book_id → books.book_id
    - CASCADE DELETE: Deleting a book deletes all its copies
 
-3. members (1) → book_copies (0..3)
-   - One member can currently borrow 0-3 book copies
-   - Foreign Key: book_copies.current_borrower_id → members.member_id
-   - SET NULL on DELETE: Deleting a member clears the borrower reference
+3. members (1) → loans (0..3)
+   - One member can have 0-3 active loans
+   - Foreign Key: loans.member_id → members.member_id
+   - CASCADE DELETE: Deleting a member deletes their active loans
 
-4. members (1) → borrow_history (many)
-   - One member can have multiple borrowing transactions
+4. book_copies (1) → loans (0..1)
+   - One copy can have 0-1 active loan
+   - Foreign Key: loans.copy_id → book_copies.copy_id
+   - CASCADE DELETE: Deleting a copy deletes its active loan
+
+5. members (1) → borrow_history (many)
+   - One member can have multiple past borrowing transactions
    - Foreign Key: borrow_history.member_id → members.member_id
    - CASCADE DELETE: Deleting a member deletes their history
 
-5. book_copies (1) → borrow_history (many)
+6. book_copies (1) → borrow_history (many)
    - One copy can have multiple borrowing records over time
    - Foreign Key: borrow_history.copy_id → book_copies.copy_id
    - CASCADE DELETE: Deleting a copy deletes its history
@@ -130,7 +146,8 @@ RELATIONSHIP SUMMARY:
 BUSINESS RULES:
 - Maximum 3 books per member (enforced by current_borrow_count CHECK constraint)
 - Unique ISBN per book
-- Unique copy_id across all copies
-- Unique member_id per member
 - Available copies cannot exceed total copies
+- Loans table contains ONLY active borrows (no return_date)
+- Borrow History table contains ONLY completed transactions (return_date required)
+- When a book is returned, move record from loans → borrow_history
 */
