@@ -39,8 +39,8 @@ CREATE TABLE books (
     genre VARCHAR(100) NOT NULL,
     publication_year INTEGER,
     description TEXT,
-    total_copies INTEGER DEFAULT 0 CHECK,
-    available_copies INTEGER DEFAULT 0 CHECK,
+    total_copies INTEGER,
+    available_copies INTEGER,
     created_at TIMESTAMP,
     updated_at TIMESTAMP 
 );
@@ -57,14 +57,14 @@ CREATE TABLE book_authors (
 -- Book Copies Table (One-to-Many: One book can have multiple physical copies)
 CREATE TABLE book_copies (
     copy_id SERIAL PRIMARY KEY,
-    book_id INTEGER NOT NULL,
+    book_id INTEGER NOT NULL,`
     status copy_status,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     CONSTRAINT fk_book_copy FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
--- Loans Table (Active borrows only - current loans in progress)
+-- Loans Table (Active borrows only - current loans in progress)CREATE INDEX idx_books_title ON books(title);
 CREATE TABLE loans (
     loan_id SERIAL PRIMARY KEY,
     copy_id INTEGER NOT NULL,
