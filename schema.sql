@@ -42,7 +42,7 @@ CREATE TABLE books (
     total_copies INTEGER,
     available_copies INTEGER,
     created_at TIMESTAMP,
-    updated_at TIMESTAMP 
+    updated_at TIMESTAMP
 );
 
 -- Book Authors Table (Many-to-Many: One book can have multiple authors)
