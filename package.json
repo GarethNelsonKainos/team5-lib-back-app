@@ -1,0 +1,32 @@
+{
+  "name": "team5-lib-back-app",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Team 5 Library Backend Application Feb/Marc 2026",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GarethNelsonKainos/team5-lib-back-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GarethNelsonKainos/team5-lib-back-app/issues"
+  },
+  "homepage": "https://github.com/GarethNelsonKainos/team5-lib-back-app#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
