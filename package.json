@@ -4,6 +4,9 @@
   "description": "Team 5 Library Backend Application Feb/Marc 2026",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon --watch src --exec ts-node src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -30,5 +33,14 @@
     "pg": "^8.18.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "config": {
+    "PORT": "3000",
+    "DB_HOST": "localhost",
+    "DB_PORT": "5432",
+    "DB_NAME": "library",
+    "DB_USER": "your_db_user",
+    "DB_PASSWORD": "your_db_password",
+    "NODE_ENV": "development"
   }
 }
