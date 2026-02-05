@@ -2,13 +2,6 @@
 -- Tables, Relationships, and Data Types Only
 
 -- =============================================================================
--- ENUM TYPES
--- =============================================================================
-
-CREATE TYPE copy_status AS ENUM ('Available', 'Borrowed');
-CREATE TYPE membership_status AS ENUM ('Active', 'Inactive', 'Suspended');
-
--- =============================================================================
 -- CORE TABLES
 -- =============================================================================
 
@@ -23,7 +16,6 @@ CREATE TABLE members (
     city VARCHAR(100),
     state VARCHAR(100),
     zip_code VARCHAR(20),
-    status membership_status,
     registration_date DATE,
     current_borrow_count INTEGER ,
     has_overdue_books BOOLEAN,
@@ -57,8 +49,7 @@ CREATE TABLE book_authors (
 -- Book Copies Table (One-to-Many: One book can have multiple physical copies)
 CREATE TABLE book_copies (
     copy_id SERIAL PRIMARY KEY,
-    book_id INTEGER NOT NULL,`
-    status copy_status,
+    book_id INTEGER NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     CONSTRAINT fk_book_copy FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
