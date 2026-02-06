@@ -1,6 +1,6 @@
 import express from 'express';
 import { Request, Response, NextFunction } from 'express';
-import memberRoutes from './routes/memberRoutes.js';
+import memberRoutes from './controllers/memberController.js';
 
 const app = express();
 const port = 3000
