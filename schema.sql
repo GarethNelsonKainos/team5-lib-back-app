@@ -63,6 +63,7 @@ CREATE TABLE loans (
     borrow_date TIMESTAMP,
     due_date DATE NOT NULL,
     is_overdue BOOLEAN,
+    returned_at TIMESTAMP,
     created_at TIMESTAMP,
     CONSTRAINT fk_loan_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
     CONSTRAINT fk_loan_member FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
