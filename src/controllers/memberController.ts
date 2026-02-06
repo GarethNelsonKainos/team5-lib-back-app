@@ -18,14 +18,10 @@ export class MemberController {
         try {
             const members = await this.memberService.getAllMembers();
             res.status(200).json({
-                success: true,
-                data: members,
-                count: members.length
+                data: members
             });
         } catch (error) {
             res.status(500).json({
-                success: false,
-                message: 'Error fetching members',
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
         }
@@ -42,7 +38,7 @@ export class MemberController {
             if (isNaN(id)) {
                 res.status(400).json({
                     success: false,
-                    message: 'Invalid member ID'
+                    error: 'Invalid member ID'
                 });
                 return;
             }
@@ -51,21 +47,17 @@ export class MemberController {
             
             if (!member) {
                 res.status(404).json({
-                    success: false,
-                    message: 'Member not found'
+                    error: 'Member not found'
                 });
                 return;
             }
 
             res.status(200).json({
-                success: true,
                 data: member
             });
         } catch (error) {
             res.status(500).json({
-                success: false,
-                message: 'Error fetching member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Error fetching member'
             });
         }
     }
@@ -81,8 +73,7 @@ export class MemberController {
             // Validate required fields
             if (!memberData.first_name || !memberData.last_name || !memberData.email) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Missing required fields: first_name, last_name, and email are required'
+                    error: 'Missing required fields: first_name, last_name, and email are required'
                 });
                 return;
             }
@@ -90,8 +81,7 @@ export class MemberController {
             // Validate email format
             if (!isValidEmail(memberData.email)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid email format'
+                    error: 'Invalid email format'
                 });
                 return;
             }
@@ -100,8 +90,7 @@ export class MemberController {
             const existingMember = await this.memberService.getMemberByEmail(memberData.email);
             if (existingMember) {
                 res.status(409).json({
-                    success: false,
-                    message: 'Member with this email already exists'
+                    error: 'Member with this email already exists'
                 });
                 return;
             }
@@ -109,15 +98,12 @@ export class MemberController {
             const newMember = await this.memberService.createMember(memberData);
             
             res.status(201).json({
-                success: true,
                 message: 'Member created successfully',
                 data: newMember
             });
         } catch (error) {
             res.status(500).json({
-                success: false,
-                message: 'Error creating member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Error creating member'
             });
         }
     }
@@ -132,8 +118,7 @@ export class MemberController {
             
             if (isNaN(id)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid member ID'
+                    error: 'Invalid member ID'
                 });
                 return;
             }
@@ -144,8 +129,7 @@ export class MemberController {
             if (memberData.email) {
                 if (!isValidEmail(memberData.email)) {
                     res.status(400).json({
-                        success: false,
-                        message: 'Invalid email format'
+                        error: 'Invalid email format'
                     });
                     return;
                 }
@@ -154,8 +138,7 @@ export class MemberController {
                 const existingMember = await this.memberService.getMemberByEmail(memberData.email);
                 if (existingMember && existingMember.member_id !== id) {
                     res.status(409).json({
-                        success: false,
-                        message: 'Email already in use by another member'
+                        error: 'Email already in use by another member'
                     });
                     return;
                 }
@@ -165,22 +148,18 @@ export class MemberController {
             
             if (!updatedMember) {
                 res.status(404).json({
-                    success: false,
-                    message: 'Member not found'
+                    error: 'Member not found'
                 });
                 return;
             }
 
             res.status(200).json({
-                success: true,
                 message: 'Member updated successfully',
                 data: updatedMember
             });
         } catch (error) {
             res.status(500).json({
-                success: false,
-                message: 'Error updating member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Error updating member'
             });
         }
     }
@@ -195,8 +174,7 @@ export class MemberController {
             
             if (isNaN(id)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid member ID'
+                    error: 'Invalid member ID'
                 });
                 return;
             }
@@ -205,21 +183,17 @@ export class MemberController {
             
             if (!deleted) {
                 res.status(404).json({
-                    success: false,
-                    message: 'Member not found'
+                    error: 'Member not found'
                 });
                 return;
             }
 
             res.status(200).json({
-                success: true,
                 message: 'Member deleted successfully'
             });
         } catch (error) {
             res.status(500).json({
-                success: false,
-                message: 'Error deleting member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Error deleting member'
             });
         }
     }
