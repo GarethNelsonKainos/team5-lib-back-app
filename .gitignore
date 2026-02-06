@@ -2,3 +2,6 @@
 .env
 dist/
 *.log
+
+# macOS
+.DS_Store

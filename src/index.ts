@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { Request, Response } from 'express';
-import borrowingRoutes from './routes/borrowingRoute.js';
+import borrowingRoutes from './controllers/borrowingController.js';
 import { testConnection } from './config/database.js';
 
 const app = express();
