@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import borrowingService from '../services/borrowingService';
+import borrowingService from '../services/borrowingService.js';
 
 interface AuthRequest extends Request {
   user?: {
@@ -9,15 +9,19 @@ interface AuthRequest extends Request {
 
 export const borrowBook = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { bookId } = req.body;
-    const memberId = req.user?.id;
+    const { bookId, memberId } = req.body;
     
     if (!memberId) {
-      res.status(401).json({ error: 'Unauthorized' });
+      res.status(400).json({ error: 'memberId is required' });
       return;
     }
     
-    const loan = await borrowingService.borrowBook(memberId, Number(bookId));
+    if (!bookId) {
+      res.status(400).json({ error: 'bookId is required' });
+      return;
+    }
+    
+    const loan = await borrowingService.borrowBook(Number(memberId), Number(bookId));
     res.status(201).json(loan);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });

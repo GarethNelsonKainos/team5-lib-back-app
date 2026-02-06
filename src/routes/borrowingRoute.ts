@@ -1,5 +1,5 @@
 import express from 'express';
-import * as borrowingController from '../controllers/borrowingController';
+import * as borrowingController from '../controllers/borrowingController.js';
 // import { authenticate, isAdmin } from '../middleware/auth'; // Uncomment when auth middleware is ready
 
 const router = express.Router();

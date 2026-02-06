@@ -1,14 +1,5 @@
-import { Pool } from 'pg';
-import { Loan, BorrowHistory } from '../models';
-
-// Database connection pool
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME || 'library',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-});
+import { pool } from '../config/database.js';
+import { Loan, BorrowHistory } from '../models/index.js';
 
 class BorrowingService {
   async borrowBook(memberId: number, bookId: number): Promise<Loan> {
