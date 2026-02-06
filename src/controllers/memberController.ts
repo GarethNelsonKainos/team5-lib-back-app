@@ -23,16 +23,14 @@ export class MemberController {
             // Validate pagination parameters
             if (page !== undefined && (isNaN(page) || page < 1)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid page number. Must be a positive integer.'
+                    error: 'Invalid page number. Must be a positive integer.'
                 });
                 return;
             }
             
             if (limit !== undefined && (isNaN(limit) || limit < 1 || limit > 100)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid limit. Must be between 1 and 100.'
+                    error: 'Invalid limit. Must be between 1 and 100.'
                 });
                 return;
             }
@@ -40,7 +38,6 @@ export class MemberController {
             const { members, total } = await this.memberService.getAllMembers(page, limit);
             
             const response: any = {
-                success: true,
                 data: members,
                 count: members.length,
                 total: total
@@ -61,11 +58,7 @@ export class MemberController {
         } catch (error) {
             console.error('Error fetching members:', error);
             res.status(500).json({
-                success: false,
-                message: 'Error fetching members',
-                error: process.env.NODE_ENV === 'development' 
-                    ? (error instanceof Error ? error.message : 'Unknown error')
-                    : undefined
+                error: error instanceof Error ? error.message : 'Error fetching members'
             });
         }
     }
@@ -80,8 +73,7 @@ export class MemberController {
             
             if (isNaN(id)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid member ID'
+                    error: 'Invalid member ID'
                 });
                 return;
             }
@@ -90,24 +82,18 @@ export class MemberController {
             
             if (!member) {
                 res.status(404).json({
-                    success: false,
-                    message: 'Member not found'
+                    error: 'Member not found'
                 });
                 return;
             }
 
             res.status(200).json({
-                success: true,
                 data: member
             });
         } catch (error) {
             console.error('Error fetching member:', error);
             res.status(500).json({
-                success: false,
-                message: 'Error fetching member',
-                error: process.env.NODE_ENV === 'development'
-                    ? (error instanceof Error ? error.message : 'Unknown error')
-                    : undefined
+                error: error instanceof Error ? error.message : 'Error fetching member'
             });
         }
     }
@@ -124,8 +110,7 @@ export class MemberController {
             // Validate required fields
             if (!memberData.first_name || !memberData.last_name || !memberData.email) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Missing required fields: first_name, last_name, and email are required'
+                    error: 'Missing required fields: first_name, last_name, and email are required'
                 });
                 return;
             }
@@ -133,8 +118,7 @@ export class MemberController {
             // Validate email format
             if (!isValidEmail(memberData.email)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid email format'
+                    error: 'Invalid email format'
                 });
                 return;
             }
@@ -142,7 +126,6 @@ export class MemberController {
             const newMember = await this.memberService.createMember(memberData);
             
             res.status(201).json({
-                success: true,
                 message: 'Member created successfully',
                 data: newMember
             });
@@ -152,18 +135,13 @@ export class MemberController {
             // Handle database unique constraint violation
             if (error.code === '23505') {
                 res.status(409).json({
-                    success: false,
-                    message: 'Member with this email already exists'
+                    error: 'Member with this email already exists'
                 });
                 return;
             }
             
             res.status(500).json({
-                success: false,
-                message: 'Error creating member',
-                error: process.env.NODE_ENV === 'development'
-                    ? (error instanceof Error ? error.message : 'Unknown error')
-                    : undefined
+                error: error instanceof Error ? error.message : 'Error creating member'
             });
         }
     }
@@ -178,8 +156,7 @@ export class MemberController {
             
             if (isNaN(id)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid member ID'
+                    error: 'Invalid member ID'
                 });
                 return;
             }
@@ -191,8 +168,7 @@ export class MemberController {
             if (memberData.email) {
                 if (!isValidEmail(memberData.email)) {
                     res.status(400).json({
-                        success: false,
-                        message: 'Invalid email format'
+                        error: 'Invalid email format'
                     });
                     return;
                 }
@@ -202,14 +178,12 @@ export class MemberController {
             
             if (!updatedMember) {
                 res.status(404).json({
-                    success: false,
-                    message: 'Member not found'
+                    error: 'Member not found'
                 });
                 return;
             }
 
             res.status(200).json({
-                success: true,
                 message: 'Member updated successfully',
                 data: updatedMember
             });
@@ -219,18 +193,13 @@ export class MemberController {
             // Handle database unique constraint violation
             if (error.code === '23505') {
                 res.status(409).json({
-                    success: false,
-                    message: 'Email already in use by another member'
+                    error: 'Email already in use by another member'
                 });
                 return;
             }
             
             res.status(500).json({
-                success: false,
-                message: 'Error updating member',
-                error: process.env.NODE_ENV === 'development'
-                    ? (error instanceof Error ? error.message : 'Unknown error')
-                    : undefined
+                error: error instanceof Error ? error.message : 'Error updating member'
             });
         }
     }
@@ -245,8 +214,7 @@ export class MemberController {
             
             if (isNaN(id)) {
                 res.status(400).json({
-                    success: false,
-                    message: 'Invalid member ID'
+                    error: 'Invalid member ID'
                 });
                 return;
             }
@@ -255,24 +223,18 @@ export class MemberController {
             
             if (!deleted) {
                 res.status(404).json({
-                    success: false,
-                    message: 'Member not found'
+                    error: 'Member not found'
                 });
                 return;
             }
 
             res.status(200).json({
-                success: true,
                 message: 'Member deleted successfully'
             });
         } catch (error) {
             console.error('Error deleting member:', error);
             res.status(500).json({
-                success: false,
-                message: 'Error deleting member',
-                error: process.env.NODE_ENV === 'development'
-                    ? (error instanceof Error ? error.message : 'Unknown error')
-                    : undefined
+                error: error instanceof Error ? error.message : 'Error deleting member'
             });
         }
     }
