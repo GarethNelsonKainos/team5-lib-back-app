@@ -1,27 +1,66 @@
 import { Request, Response } from 'express';
 import { MemberService } from '../services/memberService.js';
 import { CreateMemberDTO, UpdateMemberDTO } from '../types/member.types.js';
+import { sanitizeMemberData } from '../utils/sanitize.js';
 
 const memberService = new MemberService();
 
 export class MemberController {
     /**
-     * GET /api/members
-     * Get all members
+     * GET /api/members?page=1&limit=50
+     * Get all members with optional pagination
      */
     async getAllMembers(req: Request, res: Response): Promise<void> {
         try {
-            const members = await memberService.getAllMembers();
-            res.status(200).json({
+            const page = req.query.page ? parseInt(String(req.query.page)) : undefined;
+            const limit = req.query.limit ? parseInt(String(req.query.limit)) : undefined;
+            
+            // Validate pagination parameters
+            if (page !== undefined && (isNaN(page) || page < 1)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid page number. Must be a positive integer.'
+                });
+                return;
+            }
+            
+            if (limit !== undefined && (isNaN(limit) || limit < 1 || limit > 100)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid limit. Must be between 1 and 100.'
+                });
+                return;
+            }
+            
+            const { members, total } = await memberService.getAllMembers(page, limit);
+            
+            const response: any = {
                 success: true,
                 data: members,
-                count: members.length
-            });
+                count: members.length,
+                total: total
+            };
+            
+            // Add pagination metadata if pagination is used
+            if (page && limit) {
+                response.pagination = {
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: page * limit < total,
+                    hasPrevPage: page > 1
+                };
+            }
+            
+            res.status(200).json(response);
         } catch (error) {
+            console.error('Error fetching members:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error fetching members',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: process.env.NODE_ENV === 'development' 
+                    ? (error instanceof Error ? error.message : 'Unknown error')
+                    : undefined
             });
         }
     }
@@ -57,10 +96,13 @@ export class MemberController {
                 data: member
             });
         } catch (error) {
+            console.error('Error fetching member:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error fetching member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: process.env.NODE_ENV === 'development'
+                    ? (error instanceof Error ? error.message : 'Unknown error')
+                    : undefined
             });
         }
     }
@@ -71,7 +113,8 @@ export class MemberController {
      */
     async createMember(req: Request, res: Response): Promise<void> {
         try {
-            const memberData: CreateMemberDTO = req.body;
+            // Sanitize input data
+            const memberData: CreateMemberDTO = sanitizeMemberData(req.body);
 
             // Validate required fields
             if (!memberData.first_name || !memberData.last_name || !memberData.email) {
@@ -92,16 +135,6 @@ export class MemberController {
                 return;
             }
 
-            // Check if email already exists
-            const existingMember = await memberService.getMemberByEmail(memberData.email);
-            if (existingMember) {
-                res.status(409).json({
-                    success: false,
-                    message: 'Member with this email already exists'
-                });
-                return;
-            }
-
             const newMember = await memberService.createMember(memberData);
             
             res.status(201).json({
@@ -109,11 +142,24 @@ export class MemberController {
                 message: 'Member created successfully',
                 data: newMember
             });
-        } catch (error) {
+        } catch (error: any) {
+            console.error('Error creating member:', error);
+            
+            // Handle database unique constraint violation
+            if (error.code === '23505') {
+                res.status(409).json({
+                    success: false,
+                    message: 'Member with this email already exists'
+                });
+                return;
+            }
+            
             res.status(500).json({
                 success: false,
                 message: 'Error creating member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: process.env.NODE_ENV === 'development'
+                    ? (error instanceof Error ? error.message : 'Unknown error')
+                    : undefined
             });
         }
     }
@@ -134,7 +180,8 @@ export class MemberController {
                 return;
             }
 
-            const memberData: UpdateMemberDTO = req.body;
+            // Sanitize input data
+            const memberData: UpdateMemberDTO = sanitizeMemberData(req.body);
 
             // Validate email format if provided
             if (memberData.email) {
@@ -143,16 +190,6 @@ export class MemberController {
                     res.status(400).json({
                         success: false,
                         message: 'Invalid email format'
-                    });
-                    return;
-                }
-
-                // Check if email already exists for a different member
-                const existingMember = await memberService.getMemberByEmail(memberData.email);
-                if (existingMember && existingMember.member_id !== id) {
-                    res.status(409).json({
-                        success: false,
-                        message: 'Email already in use by another member'
                     });
                     return;
                 }
@@ -173,11 +210,24 @@ export class MemberController {
                 message: 'Member updated successfully',
                 data: updatedMember
             });
-        } catch (error) {
+        } catch (error: any) {
+            console.error('Error updating member:', error);
+            
+            // Handle database unique constraint violation
+            if (error.code === '23505') {
+                res.status(409).json({
+                    success: false,
+                    message: 'Email already in use by another member'
+                });
+                return;
+            }
+            
             res.status(500).json({
                 success: false,
                 message: 'Error updating member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: process.env.NODE_ENV === 'development'
+                    ? (error instanceof Error ? error.message : 'Unknown error')
+                    : undefined
             });
         }
     }
@@ -213,10 +263,13 @@ export class MemberController {
                 message: 'Member deleted successfully'
             });
         } catch (error) {
+            console.error('Error deleting member:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error deleting member',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: process.env.NODE_ENV === 'development'
+                    ? (error instanceof Error ? error.message : 'Unknown error')
+                    : undefined
             });
         }
     }
