@@ -2,7 +2,7 @@ import express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import memberRoutes from './routes/memberRoutes.js';
+import memberRoutes from './controllers/memberController.js';
 import pool, { closePool } from './config/database.js';
 
 dotenv.config();
