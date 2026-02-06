@@ -55,31 +55,17 @@ CREATE TABLE book_copies (
     CONSTRAINT fk_book_copy FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
--- Loans Table (Active borrows only - current loans in progress)CREATE INDEX idx_books_title ON books(title);
+-- Loans Table (All loans - active and returned)
 CREATE TABLE loans (
     loan_id SERIAL PRIMARY KEY,
     copy_id INTEGER NOT NULL,
     member_id INTEGER NOT NULL,
     borrow_date TIMESTAMP,
     due_date DATE NOT NULL,
-    is_overdue BOOLEAN,
+    return_date TIMESTAMP,
     created_at TIMESTAMP,
     CONSTRAINT fk_loan_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
     CONSTRAINT fk_loan_member FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
-);
-
--- Borrow History Table (Completed transactions only - returned books)
-CREATE TABLE borrow_history (
-    history_id SERIAL PRIMARY KEY,
-    copy_id INTEGER NOT NULL,
-    member_id INTEGER NOT NULL,
-    borrow_date TIMESTAMP,
-    due_date DATE NOT NULL,
-    return_date TIMESTAMP,
-    was_overdue BOOLEAN,
-    created_at TIMESTAMP,
-    CONSTRAINT fk_history_copy FOREIGN KEY (copy_id) REFERENCES book_copies(copy_id) ON DELETE CASCADE,
-    CONSTRAINT fk_history_member FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
 );
 
 -- =============================================================================
@@ -91,7 +77,7 @@ CREATE INDEX idx_book_authors_book_id ON book_authors(book_id);
 CREATE INDEX idx_book_copies_book_id ON book_copies(book_id);
 CREATE INDEX idx_loans_member_id ON loans(member_id);
 CREATE INDEX idx_loans_copy_id ON loans(copy_id);
-CREATE INDEX idx_borrow_history_member_id ON borrow_history(member_id);
+CREATE INDEX idx_books_title ON books(title);
 
 -- Note: Primary keys and UNIQUE constraints are automatically indexed
 -- Additional indexes can be added later based on actual query performance needs
@@ -113,31 +99,22 @@ RELATIONSHIP SUMMARY:
    - Foreign Key: book_copies.book_id → books.book_id
    - CASCADE DELETE: Deleting a book deletes all its copies
 
-3. members (1) → loans (0..3)
+3. members (1) → loans (0..3 active)
    - One member can have 0-3 active loans
    - Foreign Key: loans.member_id → members.member_id
-   - CASCADE DELETE: Deleting a member deletes their active loans
+   - CASCADE DELETE: Deleting a member deletes their loans
 
-4. book_copies (1) → loans (0..1)
-   - One copy can have 0-1 active loan
+4. book_copies (1) → loans (many)
+   - One copy can have multiple loan records (active and historical)
    - Foreign Key: loans.copy_id → book_copies.copy_id
-   - CASCADE DELETE: Deleting a copy deletes its active loan
-
-5. members (1) → borrow_history (many)
-   - One member can have multiple past borrowing transactions
-   - Foreign Key: borrow_history.member_id → members.member_id
-   - CASCADE DELETE: Deleting a member deletes their history
-
-6. book_copies (1) → borrow_history (many)
-   - One copy can have multiple borrowing records over time
-   - Foreign Key: borrow_history.copy_id → book_copies.copy_id
-   - CASCADE DELETE: Deleting a copy deletes its history
+   - CASCADE DELETE: Deleting a copy deletes its loan records
 
 BUSINESS RULES:
 - Maximum 3 books per member (enforced by current_borrow_count CHECK constraint)
 - Unique ISBN per book
 - Available copies cannot exceed total copies
-- Loans table contains ONLY active borrows (no return_date)
-- Borrow History table contains ONLY completed transactions (return_date required)
-- When a book is returned, move record from loans → borrow_history
+- Loans table contains ALL loans (active and returned)
+- Active loans: return_date IS NULL
+- Returned loans: return_date IS NOT NULL
+- Overdue calculated dynamically: due_date < NOW() AND return_date IS NULL
 */
