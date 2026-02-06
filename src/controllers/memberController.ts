@@ -2,10 +2,15 @@ import { Request, Response, Router } from 'express';
 import { MemberService } from '../services/memberService.js';
 import { CreateMemberDTO, UpdateMemberDTO } from '../types/member.types.js';
 import { sanitizeMemberData } from '../utils/sanitize.js';
-
-const memberService = new MemberService();
+import { isValidEmail } from '../utils/validation.js';
 
 export class MemberController {
+    private memberService: MemberService;
+
+    constructor(memberService: MemberService = new MemberService()) {
+        this.memberService = memberService;
+    }
+
     /**
      * GET /api/members?page=1&limit=50
      * Get all members with optional pagination
@@ -32,7 +37,7 @@ export class MemberController {
                 return;
             }
             
-            const { members, total } = await memberService.getAllMembers(page, limit);
+            const { members, total } = await this.memberService.getAllMembers(page, limit);
             
             const response: any = {
                 success: true,
@@ -81,7 +86,7 @@ export class MemberController {
                 return;
             }
 
-            const member = await memberService.getMemberById(id);
+            const member = await this.memberService.getMemberById(id);
             
             if (!member) {
                 res.status(404).json({
@@ -126,8 +131,7 @@ export class MemberController {
             }
 
             // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(memberData.email)) {
+            if (!isValidEmail(memberData.email)) {
                 res.status(400).json({
                     success: false,
                     message: 'Invalid email format'
@@ -135,7 +139,7 @@ export class MemberController {
                 return;
             }
 
-            const newMember = await memberService.createMember(memberData);
+            const newMember = await this.memberService.createMember(memberData);
             
             res.status(201).json({
                 success: true,
@@ -185,8 +189,7 @@ export class MemberController {
 
             // Validate email format if provided
             if (memberData.email) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(memberData.email)) {
+                if (!isValidEmail(memberData.email)) {
                     res.status(400).json({
                         success: false,
                         message: 'Invalid email format'
@@ -195,7 +198,7 @@ export class MemberController {
                 }
             }
 
-            const updatedMember = await memberService.updateMember(id, memberData);
+            const updatedMember = await this.memberService.updateMember(id, memberData);
             
             if (!updatedMember) {
                 res.status(404).json({
@@ -248,7 +251,7 @@ export class MemberController {
                 return;
             }
 
-            const deleted = await memberService.deleteMember(id);
+            const deleted = await this.memberService.deleteMember(id);
             
             if (!deleted) {
                 res.status(404).json({
