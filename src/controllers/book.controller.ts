@@ -322,8 +322,7 @@ export class BookController {
                 return;
             }
 
-            const success = await BookService.removeAuthor(authorId);
-
+            const success = await BookService.removeAuthor(bookId, authorId);
             if (!success) {
                 res.status(404).json({
                     success: false,
