@@ -1,7 +1,7 @@
 import express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import * as dotenv from 'dotenv';
-import bookRoutes from './routes/book.routes.js';
+import { setupBookRoutes } from './controllers/book.controller.js';
 import { checkDatabaseConnection } from './config/database.js';
 
 // Load environment variables
@@ -17,7 +17,7 @@ app.get('/', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Mount book routes
-app.use('/api/books', bookRoutes);
+app.use('/api/books', setupBookRoutes());
 
 // Start server with database connection check
 const startServer = async () => {
