@@ -1,17 +1,22 @@
 import { Request, Response, Router } from 'express';
 import { MemberService } from '../services/memberService.js';
 import { CreateMemberDTO, UpdateMemberDTO } from '../types/member.types.js';
-
-const memberService = new MemberService();
+import { isValidEmail } from '../utils/validation.js';
 
 export class MemberController {
+    private memberService: MemberService;
+
+    constructor(memberService: MemberService = new MemberService()) {
+        this.memberService = memberService;
+    }
+
     /**
      * GET /api/members
      * Get all members
      */
     async getAllMembers(req: Request, res: Response): Promise<void> {
         try {
-            const members = await memberService.getAllMembers();
+            const members = await this.memberService.getAllMembers();
             res.status(200).json({
                 success: true,
                 data: members,
@@ -42,7 +47,7 @@ export class MemberController {
                 return;
             }
 
-            const member = await memberService.getMemberById(id);
+            const member = await this.memberService.getMemberById(id);
             
             if (!member) {
                 res.status(404).json({
@@ -83,8 +88,7 @@ export class MemberController {
             }
 
             // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(memberData.email)) {
+            if (!isValidEmail(memberData.email)) {
                 res.status(400).json({
                     success: false,
                     message: 'Invalid email format'
@@ -93,7 +97,7 @@ export class MemberController {
             }
 
             // Check if email already exists
-            const existingMember = await memberService.getMemberByEmail(memberData.email);
+            const existingMember = await this.memberService.getMemberByEmail(memberData.email);
             if (existingMember) {
                 res.status(409).json({
                     success: false,
@@ -102,7 +106,7 @@ export class MemberController {
                 return;
             }
 
-            const newMember = await memberService.createMember(memberData);
+            const newMember = await this.memberService.createMember(memberData);
             
             res.status(201).json({
                 success: true,
@@ -138,8 +142,7 @@ export class MemberController {
 
             // Validate email format if provided
             if (memberData.email) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(memberData.email)) {
+                if (!isValidEmail(memberData.email)) {
                     res.status(400).json({
                         success: false,
                         message: 'Invalid email format'
@@ -148,7 +151,7 @@ export class MemberController {
                 }
 
                 // Check if email already exists for a different member
-                const existingMember = await memberService.getMemberByEmail(memberData.email);
+                const existingMember = await this.memberService.getMemberByEmail(memberData.email);
                 if (existingMember && existingMember.member_id !== id) {
                     res.status(409).json({
                         success: false,
@@ -158,7 +161,7 @@ export class MemberController {
                 }
             }
 
-            const updatedMember = await memberService.updateMember(id, memberData);
+            const updatedMember = await this.memberService.updateMember(id, memberData);
             
             if (!updatedMember) {
                 res.status(404).json({
@@ -198,7 +201,7 @@ export class MemberController {
                 return;
             }
 
-            const deleted = await memberService.deleteMember(id);
+            const deleted = await this.memberService.deleteMember(id);
             
             if (!deleted) {
                 res.status(404).json({
